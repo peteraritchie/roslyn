@@ -9,6 +9,8 @@ using Microsoft.CodeAnalysis.CodeStyle;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Host;
 using Microsoft.CodeAnalysis.Options;
+using System.Diagnostics;
+using Microsoft.CodeAnalysis.Test.Utilities;
 
 #if !NETCOREAPP
 using System;
@@ -53,15 +55,16 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions
             => _options.Add(new OptionKey2(option, _languageName), new CodeStyleOption2<T>(value, notification));
 
         // 📝 This can be removed if/when collection initializers support AddRange.
-        public void Add(OptionsCollection options)
+        public void Add(OptionsCollection? options)
             => AddRange(options);
 
-        public void AddRange(OptionsCollection options)
+        public void AddRange(OptionsCollection? options)
         {
+            if (options is null)
+                return;
+
             foreach (var (key, value) in options)
-            {
                 _options.Add(key, value);
-            }
         }
 
         public IEnumerator<KeyValuePair<OptionKey2, object?>> GetEnumerator()
@@ -72,7 +75,7 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions
 
 #if !CODE_STYLE
         public OptionSet ToOptionSet()
-            => new OptionValueSet(_options.ToImmutableDictionary(entry => new OptionKey(entry.Key.Option, entry.Key.Language), entry => entry.Value));
+            => new TestOptionSet(_options.ToImmutableDictionary(entry => new OptionKey(entry.Key.Option, entry.Key.Language), entry => entry.Value));
 
         public AnalyzerConfigOptions ToAnalyzerConfigOptions(LanguageServices languageServices)
         {
@@ -84,7 +87,7 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.CodeActions
         {
             foreach (var (optionKey, value) in _options)
             {
-                globalOptions.SetGlobalOption((OptionKey)optionKey, value);
+                globalOptions.SetGlobalOption(optionKey, value);
             }
         }
 #endif
